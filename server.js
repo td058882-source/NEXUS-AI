@@ -78,7 +78,8 @@ function validateMessages(input){
   });
 }
 async function askCompatible(p,messages){
-  const headers={"Content-Type":"application/json"};\n  if(p.key)headers.Authorization="Bearer "+process.env[p.key];
+  const headers={"Content-Type":"application/json"};
+  if(p.key)headers.Authorization="Bearer "+process.env[p.key];
   const response=await fetch(p.url,{method:"POST",headers,body:JSON.stringify({model:p.model,messages,temperature:0.7}),signal:AbortSignal.timeout(60000)});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.error?.message||"HTTP "+response.status);
