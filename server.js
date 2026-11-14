@@ -81,7 +81,7 @@ async function askCompatible(p,messages){
   const headers={"Content-Type":"application/json"};
   if(p.key)headers.Authorization="Bearer "+process.env[p.key];
   let response, data={};
-  for(let attempt=0;attempt<3;attempt++){
+  for(let attempt=0;attempt<4;attempt++){
     response=await fetch(p.url,{method:"POST",headers,body:JSON.stringify({model:p.model,messages,temperature:0.7}),signal:AbortSignal.timeout(60000)});
     data=await response.json().catch(()=>({}));
     if(response.ok)break;
