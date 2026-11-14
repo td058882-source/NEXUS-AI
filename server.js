@@ -82,8 +82,18 @@ async function askCompatible(p,messages){
   if(p.key)headers.Authorization="Bearer "+process.env[p.key];
   let response, data={};
   for(let attempt=0;attempt<4;attempt++){
-    response=await fetch(p.url,{method:"POST",headers,body:JSON.stringify({model:p.model,messages,temperature:0.7}),signal:AbortSignal.timeout(60000)});
-    data=await response.json().catch(()=>({}));
+    try{
+      response=await fetch(p.url,{method:"POST",headers,body:JSON.stringify({model:p.model,messages,temperature:0.7}),signal:AbortSignal.timeout(60000)});
+      data=await response.json().catch(()=>({}));
+    }catch(error){
+      // A fetch timeout/network error throws before an HTTP response exists.
+      // Retry it once; then let the provider fallback logic try the next provider.
+      if(attempt>=1||!["TimeoutError","AbortError","TypeError"].includes(error.name))throw error;
+      const delay=1500+Math.floor(Math.random()*500);
+      console.warn(`Proveedor ${p.name} falló por ${error.name}; reintentando una vez en ${delay}ms.`);
+      await new Promise(resolve=>setTimeout(resolve,delay));
+      continue;
+    }
     if(response.ok)break;
     // Retry temporary provider overload/rate-limit errors before falling back.
     if(![408,429,500,502,503,504].includes(response.status)||attempt===3){
