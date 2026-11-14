@@ -108,7 +108,7 @@ const anthropic = {
 };
 // Local inference engines are opt-in and must be reachable from this backend.
 // On Render, 127.0.0.1 refers to the Render container, not the user's computer.
-function localProvider(name, prefix, defaultPort, defaultModel) {
+function localProvider(name, prefix, defaultModel) {
   const baseUrl=(process.env[prefix+"_BASE_URL"]||"").trim().replace(/\/$/,"");
   const enabled=process.env[prefix+"_ENABLED"]==="true" && Boolean(baseUrl);
   return {
@@ -121,8 +121,8 @@ function localProvider(name, prefix, defaultPort, defaultModel) {
     local:true
   };
 }
-const ollama=localProvider("Ollama (local)","OLLAMA","11434","llama3.2");
-const localAI=localProvider("LocalAI (local)","LOCALAI","8080","gpt-4");
+const ollama=localProvider("Ollama (local)","OLLAMA","llama3.2");
+const localAI=localProvider("LocalAI (local)","LOCALAI","gpt-4");
 const localProviders=[ollama,localAI];
 
 const requestCounts = new Map();
@@ -163,7 +163,7 @@ app.post("/api/media/image",dailyImageLimit,async(req,res)=>{
   }
 });
 
-app.get("/api/health",(_req,res)=>res.json({ok:true,app:"NEXUS AI",version:"1.3.0"}));
+app.get("/api/health",(_req,res)=>res.json({ok:true,app:"NEXUS AI",version:"1.4.0"}));
 app.get("/api/status",(_req,res)=>res.json({
   providers:[
     ...compatibleProviders.map(p=>({name:p.name,configured:Boolean(process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)),enabled:Boolean(process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)&&providerIsAllowed(p)),model:p.model})),
@@ -236,7 +236,7 @@ app.post("/api/chat",rateLimit,async(req,res)=>{
     ...compatibleProviders.filter(p=>process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)&&providerIsAllowed(p)).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
     ...(process.env.NEXUS_ALLOW_PAID_PROVIDERS === "true" && process.env.ANTHROPIC_API_KEY?[{provider:anthropic,run:()=>askAnthropic(messages)}]:[])
   ];
-  if(!available.length)return res.status(503).json({error:"No hay proveedores configurados. Añade una API key privada en Render o activa Ollama en un servidor al que NEXUS pueda acceder."});
+  if(!available.length)return res.status(503).json({error:"No hay proveedores configurados. Añade una API key privada o activa Ollama/LocalAI en un servidor al que NEXUS pueda acceder."});
   const requestedProvider=typeof req.body?.provider==="string"?req.body.provider.trim():"";
   const candidates=requestedProvider?available.filter(item=>item.provider.name===requestedProvider):available;
   if(requestedProvider&&!candidates.length){
