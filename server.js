@@ -86,10 +86,14 @@ async function askCompatible(p,messages){
     data=await response.json().catch(()=>({}));
     if(response.ok)break;
     // Retry temporary provider overload/rate-limit errors before falling back.
-    if(![429,500,502,503,504].includes(response.status)||attempt===2){
-      throw new Error(data.error?.message||"HTTP "+response.status);
+    if(![408,429,500,502,503,504].includes(response.status)||attempt===3){
+      const detail=data.error?.message||data.message||("HTTP "+response.status);
+      throw new Error(detail);
     }
-    await new Promise(resolve=>setTimeout(resolve,700*(2**attempt)));
+    // Exponential backoff: 1s, 2s, 4s. Helps with temporary Gemini overload (503).
+    const delay=1000*(2**attempt)+Math.floor(Math.random()*300);
+    console.warn(`Proveedor ${p.name} respondió HTTP ${response.status}; reintentando en ${delay}ms (intento ${attempt+1}/4).`);
+    await new Promise(resolve=>setTimeout(resolve,delay));
   }
   if(!response.ok)throw new Error(data.error?.message||"HTTP "+response.status);
   const reply=data.choices?.[0]?.message?.content;
