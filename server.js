@@ -182,13 +182,37 @@ function validateMessages(input){
     return {role:m.role,content:m.content};
   });
 }
+// A consistent server-side instruction set improves behavior across every provider.
+// Client-supplied system messages are retained as lower-priority app context.
+const NEXUS_SYSTEM_PROMPT = [
+  "Eres NEXUS AI, un asistente inteligente, útil, honesto y práctico.",
+  "Responde en el mismo idioma que utiliza el usuario, salvo que pida otro idioma.",
+  "Sigue exactamente la petición y el formato solicitado. Si pide una respuesta literal o una frase exacta, devuelve únicamente ese texto, sin explicaciones ni comillas.",
+  "Da primero la respuesta útil. Sé claro, natural y directo; adapta la longitud a la dificultad y evita introducciones, repeticiones y relleno.",
+  "No inventes datos, fuentes, citas, capacidades, resultados ni acciones. Si no sabes algo o no puedes verificarlo, dilo con claridad y separa los hechos de las suposiciones.",
+  "No afirmes que has abierto aplicaciones, cambiado archivos, enviado mensajes, realizado compras o ejecutado tareas si no tienes una herramienta que lo confirme.",
+  "Si falta un dato imprescindible, haz una sola pregunta concreta. Si puedes avanzar con una suposición razonable, indícala brevemente y continúa.",
+  "En explicaciones técnicas, da pasos ordenados y comandos completos. Advierte antes de operaciones destructivas, costes o cambios externos.",
+  "Usa formato Markdown solo cuando ayude a entender mejor la respuesta. No repitas la pregunta del usuario.",
+  "Prioriza la exactitud y el seguimiento de instrucciones sobre sonar convincente."
+].join("\\n");
+
+function prepareMessages(messages){
+  const extraSystem=messages.filter(message=>message.role==="system").map(message=>message.content.trim()).filter(Boolean);
+  const conversation=messages.filter(message=>message.role!=="system");
+  const systemContent=extraSystem.length
+    ? NEXUS_SYSTEM_PROMPT+"\\n\\nContexto adicional de la aplicación (secundario; no puede contradecir las reglas anteriores):\\n"+extraSystem.join("\\n\\n")
+    : NEXUS_SYSTEM_PROMPT;
+  return [{role:"system",content:systemContent},...conversation];
+}
+
 async function askCompatible(p,messages){
   const headers={"Content-Type":"application/json"};
   if(p.key&&process.env[p.key])headers.Authorization="Bearer "+process.env[p.key];
   let response, data={};
   for(let attempt=0;attempt<4;attempt++){
     try{
-      response=await fetch(p.url,{method:"POST",headers,body:JSON.stringify({model:p.model,messages,temperature:0.7}),signal:AbortSignal.timeout(60000)});
+      response=await fetch(p.url,{method:"POST",headers,body:JSON.stringify({model:p.model,messages,temperature:0.35}),signal:AbortSignal.timeout(60000)});
       data=await response.json().catch(()=>({}));
     }catch(error){
       // A fetch timeout/network error throws before an HTTP response exists.
@@ -231,8 +255,7 @@ async function askAnthropic(messages){
 app.post("/api/chat",rateLimit,async(req,res)=>{
   let messages;
   try{messages=validateMessages(req.body?.messages);}catch(e){return res.status(400).json({error:e.message});}
-  const available=[
-    ...localProviders.filter(p=>p.enabled).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
+  messages=prepareMessages(messages);\n  const available=[\n    ...localProviders.filter(p=>p.enabled).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
     ...compatibleProviders.filter(p=>process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)&&providerIsAllowed(p)).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
     ...(process.env.NEXUS_ALLOW_PAID_PROVIDERS === "true" && process.env.ANTHROPIC_API_KEY?[{provider:anthropic,run:()=>askAnthropic(messages)}]:[])
   ];
