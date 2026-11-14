@@ -40,15 +40,16 @@ jobs:
           npm install
           npm install --no-save @capacitor/core@^7 @capacitor/android@^7 @capacitor/cli@^7 @capacitor/assets sharp
 
+      - name: Generate Android project
+        run: npx cap add android
+
       - name: Generate branded Android assets
         run: |
           node scripts/generate-android-assets.mjs
           npx capacitor-assets generate --android
 
-      - name: Generate Android project
-        run: |
-          npx cap add android
-          npx cap sync android
+      - name: Sync Android project
+        run: npx cap sync android
 
       - name: Configure Play Store signing (if secrets exist)
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' && env.ANDROID_KEY_ALIAS != '' && env.ANDROID_KEYSTORE_PASSWORD != '' && env.ANDROID_KEY_PASSWORD != '' }}
