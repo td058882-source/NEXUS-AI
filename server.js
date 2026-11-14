@@ -17,6 +17,9 @@ app.use(express.static(path.join(__dirname,"public")));
 const compatibleProviders = [
   ["OpenAI","OPENAI","https://api.openai.com/v1","gpt-4.1-mini"],
   ["Gemini","GEMINI","https://generativelanguage.googleapis.com/v1beta/openai","gemini-3.6-flash"],
+  ["Gemini 3.8 Flash","GEMINI","https://generativelanguage.googleapis.com/v1beta/openai","gemini-3.8-flash"],
+  ["Gemini 3.7 Flash","GEMINI","https://generativelanguage.googleapis.com/v1beta/openai","gemini-3.7-flash"],
+  ["Gemini 3.5 Flash-Lite","GEMINI","https://generativelanguage.googleapis.com/v1beta/openai","gemini-3.5-flash-lite"],
   ["Groq","GROQ","https://api.groq.com/openai/v1","openai/gpt-oss-20b"],
   ["OpenRouter","OPENROUTER","https://openrouter.ai/api/v1","openrouter/free"],
   ["Mistral","MISTRAL","https://api.mistral.ai/v1","mistral-small-latest"],
@@ -50,6 +53,14 @@ const compatibleProviders = [
     : "",
   model:process.env.CLOUDFLARE_CHAT_MODEL||"@cf/google/gemma-4-26b-a4b-it"
 }, {
+  name:"Cloudflare Workers AI · Nemotron 120B",
+  key:"CLOUDFLARE_API_TOKEN",
+  requiresAccountId:true,
+  url:process.env.CLOUDFLARE_ACCOUNT_ID
+    ? "https://api.cloudflare.com/client/v4/accounts/"+encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)+"/ai/v1/chat/completions"
+    : "",
+  model:"@cf/nvidia/nemotron-3-120b-a12b"
+}, {
   // Second free-tier Cloudflare model; shares the same daily Neurons allowance.
   name:"Cloudflare Workers AI · GLM-4.7 Flash",
   key:"CLOUDFLARE_API_TOKEN",
@@ -64,10 +75,14 @@ const compatibleProviders = [
 // even if their API keys exist in Render. Explicit opt-in is required to unlock them.
 const FREE_PROVIDER_NAMES = new Set([
   "Gemini",
+  "Gemini 3.8 Flash",
+  "Gemini 3.7 Flash",
+  "Gemini 3.5 Flash-Lite",
   "Groq",
   "OpenRouter",
   "Cerebras",
   "Cloudflare Workers AI",
+  "Cloudflare Workers AI · Nemotron 120B",
   "Cloudflare Workers AI · GLM-4.7 Flash"
 ]);
 function providerIsAllowed(p){
