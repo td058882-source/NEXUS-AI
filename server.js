@@ -20,7 +20,8 @@ const compatibleProviders = [
   ["Groq","GROQ","https://api.groq.com/openai/v1","openai/gpt-oss-20b"],
   ["OpenRouter","OPENROUTER","https://openrouter.ai/api/v1","openrouter/free"],
   ["Mistral","MISTRAL","https://api.mistral.ai/v1","mistral-small-latest"],
-  ["DeepSeek","DEEPSEEK","https://api.deepseek.com/v1","deepseek-chat"],
+  // DeepSeek API uses a paid token balance; kept blocked by the free-only allowlist below.
+  ["DeepSeek","DEEPSEEK","https://api.deepseek.com","deepseek-flash"],
   ["xAI (Grok)","XAI","https://api.x.ai/v1","grok-3-mini"],
   ["Cerebras","CEREBRAS","https://api.cerebras.ai/v1","llama-3.3-70b"],
   ["Together AI","TOGETHER","https://api.together.ai/v1","meta-llama/Llama-3.3-70B-Instruct-Turbo"],
