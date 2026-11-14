@@ -17,7 +17,7 @@ app.use(express.static(path.join(__dirname,"public")));
 const compatibleProviders = [
   ["OpenAI","OPENAI","https://api.openai.com/v1","gpt-4.1-mini"],
   ["Gemini","GEMINI","https://generativelanguage.googleapis.com/v1beta/openai","gemini-3.6-flash"],
-  ["Groq","GROQ","https://api.groq.com/openai/v1","llama-3.3-70b-versatile"],
+  ["Groq","GROQ","https://api.groq.com/openai/v1","openai/gpt-oss-20b"],
   ["OpenRouter","OPENROUTER","https://openrouter.ai/api/v1","openrouter/free"],
   ["Mistral","MISTRAL","https://api.mistral.ai/v1","mistral-small-latest"],
   ["DeepSeek","DEEPSEEK","https://api.deepseek.com/v1","deepseek-chat"],
