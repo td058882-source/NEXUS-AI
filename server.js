@@ -32,7 +32,9 @@ const compatibleProviders = [
   ["Hugging Face","HUGGINGFACE","https://router.huggingface.co/v1","Qwen/Qwen2.5-72B-Instruct"],
   ["NVIDIA NIM","NVIDIA_NIM","https://integrate.api.nvidia.com/v1","meta/llama-3.3-70b-instruct"],
   ["Qwen (DashScope)","QWEN","https://dashscope-intl.aliyuncs.com/compatible-mode/v1","qwen-plus"],
-  ["Moonshot AI (Kimi)","MOONSHOT","https://api.moonshot.ai/v1","kimi-k2"]
+  ["Moonshot AI (Kimi)","MOONSHOT","https://api.moonshot.ai/v1","kimi-k2"],
+  // Cohere evaluation keys are limited trials; deliberately excluded from the free-only allowlist.
+  ["Cohere (prueba)","COHERE","https://api.cohere.ai/compatibility/v1","command-a-plus-05-2026"]
 ].map(([name,prefix,defaultBase,defaultModel])=>({
   name, key:prefix+"_API_KEY",
   url:(process.env[prefix+"_BASE_URL"]||defaultBase).replace(/\/$/,"")+"/chat/completions",
@@ -46,7 +48,7 @@ const compatibleProviders = [
   url:process.env.CLOUDFLARE_ACCOUNT_ID
     ? "https://api.cloudflare.com/client/v4/accounts/"+encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)+"/ai/v1/chat/completions"
     : "",
-  model:process.env.CLOUDFLARE_CHAT_MODEL||"@cf/meta/llama-3.1-8b-instruct"
+  model:process.env.CLOUDFLARE_CHAT_MODEL||"@cf/google/gemma-4-26b-a4b-it"
 }]);
 
 // NEXUS runs in free-only mode by default. Paid providers remain blocked
