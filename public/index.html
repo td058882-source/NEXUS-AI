@@ -22,6 +22,65 @@
 .toast{font-size:11px;color:#9daac0;margin:0 0 10px;min-height:15px}
 @media(max-width:820px){.app{grid-template-columns:70px minmax(0,1fr)}.sidebar{padding:18px 10px;align-items:center}.brand{padding:0}.brand-copy,.nav-label,.navtext,.newtext,.freebox{display:none}.newchat{width:44px;height:44px;padding:0;text-align:center;font-size:20px}.navitem{justify-content:center;padding:11px 0}.navicon{width:auto}.sidebottom{display:none}.topbar{padding:0 20px}.content{padding:25px 20px}}
 @media(max-width:560px){.app{grid-template-columns:1fr}.sidebar{display:none}.topbar{height:58px;padding:0 14px}.content{padding:20px 12px}.hero{margin:16px 0 20px}.quickgrid{gap:7px}.quick{padding:10px;min-height:82px}.quick small{font-size:9px}.chatwrap{min-height:430px}.chathead{align-items:flex-start;flex-direction:column}.modelselect{max-width:100%;width:100%}.messages{padding:12px}.msg{max-width:96%}.connection{font-size:10px}}
+
+/* Mobile-first layout refinement */
+@media(max-width:560px){
+  html,body{width:100%;min-width:0;min-height:100%;overflow-x:hidden}
+  .app{display:block;min-height:100svh;background:var(--bg)}
+  .main{min-height:100svh;padding-bottom:68px}
+  .topbar{height:56px;padding:0 13px;gap:8px}
+  .crumb{font-size:12px}
+  .topright{gap:8px}
+  .avatar{width:30px;height:30px;flex:0 0 30px}
+  .content{width:100%;max-width:100%;min-width:0;margin:0;padding:14px 11px 12px;display:flex;flex-direction:column;gap:0}
+  .hero{margin:7px 2px 14px}
+  .eyebrow{font-size:9px;letter-spacing:1.5px}
+  .hero h1{font-size:clamp(25px,7vw,32px);line-height:1.12;letter-spacing:-1px;margin:8px 0 6px}
+  .hero p{font-size:12px;line-height:1.45;max-width:34ch}
+  .quickgrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 12px}
+  .quick{min-width:0;min-height:76px;padding:9px 8px;border-radius:11px}
+  .quick .qicon{font-size:15px}
+  .quick strong{font-size:10px;line-height:1.2;margin:6px 0 3px}
+  .quick small{font-size:9px;line-height:1.25;display:block}
+  .chatwrap{width:100%;min-width:0;min-height:clamp(390px,58svh,650px);flex:1;border-radius:15px}
+  .chathead{padding:11px;gap:9px;align-items:stretch;flex-direction:column}
+  .chat-title{font-size:11px}
+  .chat-sub{font-size:10px;line-height:1.4}
+  .modelselect{width:100%;max-width:none;min-height:42px;font-size:12px;padding:10px 12px}
+  .messages{padding:11px;gap:11px;min-height:170px}
+  .empty{padding:18px 8px}
+  .empty strong{font-size:16px}
+  .empty p{font-size:11px}
+  .msg{max-width:94%;padding:11px 12px;font-size:13px}
+  .composer{padding:10px}
+  .inputrow{gap:6px;padding:5px;border-radius:12px}
+  .inputrow textarea{font-size:16px;min-height:42px;padding:10px 8px}
+  .send{height:42px;padding:0 13px;font-size:12px;white-space:nowrap}
+  .tools{align-items:center;flex-wrap:wrap;padding-top:9px}
+  .hint{font-size:9px;max-width:55%}
+  .test{min-height:34px;padding:7px 10px;font-size:10px}
+  .providerlist{gap:5px;margin-top:10px}
+  .provider{font-size:9px;padding:4px 7px}
+  .footer{font-size:9px;line-height:1.4;padding:10px 4px 2px}
+  /* Persistent thumb-friendly navigation */
+  .sidebar{position:fixed;z-index:10;left:0;right:0;bottom:0;width:100%;height:64px;padding:5px 8px calc(5px + env(safe-area-inset-bottom));display:flex;flex-direction:row;align-items:center;justify-content:center;gap:5px;background:#0d1019f5;border-right:0;border-top:1px solid var(--line);backdrop-filter:blur(18px)}
+  .sidebar .brand,.sidebar .newchat,.sidebar .sidebottom{display:none}
+  .sidebar>div:not(.sidebottom){display:flex;flex:1;min-width:0;gap:4px;align-items:stretch;justify-content:space-around}
+  .sidebar .nav-label{display:none}
+  .sidebar .navitem{display:flex;flex:1;min-width:0;min-height:48px;flex-direction:column;justify-content:center;gap:3px;padding:5px 2px;border-radius:9px;font-size:9px;text-align:center}
+  .sidebar .navicon{width:auto;font-size:16px;line-height:1.1}
+  .sidebar .navtext{display:block;font-size:9px;line-height:1.1;white-space:nowrap}
+  .sidebottom{display:none}
+}
+@media(max-width:360px){
+  .content{padding-left:8px;padding-right:8px}
+  .quick{padding:8px 6px}
+  .quick strong{font-size:9px}
+  .quick small{font-size:8px}
+  .hint{max-width:48%}
+  .send{padding:0 10px}
+}
+
 </style>
 </head>
 <body>
