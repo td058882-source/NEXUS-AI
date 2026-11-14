@@ -24,9 +24,21 @@ NEXUS AI puede conectarse a estos proveedores mediante variables privadas de ent
 - Qwen / DashScope
 - Moonshot AI / Kimi
 - Anthropic / Claude
-- Ollama (local, si el backend puede acceder a la instancia)
+- Ollama (local)
+- LocalAI (local)
 
-Un proveedor solo se considera activo cuando su clave está configurada (Ollama requiere además `OLLAMA_ENABLED=true`). Tener integración no significa que el proveedor sea gratuito ni que ofrezca uso ilimitado.
+Los proveedores externos se activan cuando su clave está configurada y están permitidos por el modo gratuito. Ollama y LocalAI no necesitan una clave por defecto, pero requieren que el backend pueda alcanzar su servidor y que se active su variable `*_ENABLED=true`. Si se exponen fuera de una red privada, configura autenticación y HTTPS.
+
+## Motor local y orden de respaldo
+
+NEXUS intenta primero los motores locales activados (Ollama y después LocalAI). Si fallan, continúa con los proveedores externos gratuitos configurados. Los proveedores de pago siguen bloqueados por defecto.
+
+Variables:
+- `OLLAMA_ENABLED=true`, `OLLAMA_BASE_URL=http://127.0.0.1:11434`, `OLLAMA_MODEL=llama3.2`
+- `LOCALAI_ENABLED=true`, `LOCALAI_BASE_URL=http://127.0.0.1:8080`, `LOCALAI_MODEL=gpt-4`
+- `OLLAMA_API_KEY` y `LOCALAI_API_KEY` son opcionales para endpoints que requieran Bearer token.
+
+**Importante:** en Render, `127.0.0.1` apunta al contenedor de Render, no al ordenador del usuario. Para usar el motor local desde Render, el servidor Ollama/LocalAI debe estar en un host accesible mediante una conexión privada o un endpoint HTTPS seguro. No expongas directamente un puerto sin autenticación. El uso local evita pagar por token al proveedor, pero depende del hardware, electricidad y disponibilidad del equipo.
 
 ## Ejecutar localmente
 
@@ -56,4 +68,4 @@ Configura las claves como variables privadas en el apartado **Environment** del 
 
 ## Estado
 
-Versión 1.2: interfaz web, 19 integraciones de proveedor, selección automática con fallback, endpoint de estado, validación de entrada y comprobación de salud.
+Versión 1.4: interfaz web, motores locales Ollama y LocalAI, proveedores externos con fallback, endpoint de estado, validación de entrada y comprobación de salud.
