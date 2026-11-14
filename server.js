@@ -195,13 +195,13 @@ const NEXUS_SYSTEM_PROMPT = [
   "En explicaciones técnicas, da pasos ordenados y comandos completos. Advierte antes de operaciones destructivas, costes o cambios externos.",
   "Usa formato Markdown solo cuando ayude a entender mejor la respuesta. No repitas la pregunta del usuario.",
   "Prioriza la exactitud y el seguimiento de instrucciones sobre sonar convincente."
-].join("\\n");
+].join("\n");
 
 function prepareMessages(messages){
   const extraSystem=messages.filter(message=>message.role==="system").map(message=>message.content.trim()).filter(Boolean);
   const conversation=messages.filter(message=>message.role!=="system");
   const systemContent=extraSystem.length
-    ? NEXUS_SYSTEM_PROMPT+"\\n\\nContexto adicional de la aplicación (secundario; no puede contradecir las reglas anteriores):\\n"+extraSystem.join("\\n\\n")
+    ? NEXUS_SYSTEM_PROMPT+"\n\nContexto adicional de la aplicación (secundario; no puede contradecir las reglas anteriores):\n"+extraSystem.join("\n\n")
     : NEXUS_SYSTEM_PROMPT;
   return [{role:"system",content:systemContent},...conversation];
 }
@@ -255,7 +255,9 @@ async function askAnthropic(messages){
 app.post("/api/chat",rateLimit,async(req,res)=>{
   let messages;
   try{messages=validateMessages(req.body?.messages);}catch(e){return res.status(400).json({error:e.message});}
-  messages=prepareMessages(messages);\n  const available=[\n    ...localProviders.filter(p=>p.enabled).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
+  messages=prepareMessages(messages);
+  const available=[
+    ...localProviders.filter(p=>p.enabled).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
     ...compatibleProviders.filter(p=>process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)&&providerIsAllowed(p)).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
     ...(process.env.NEXUS_ALLOW_PAID_PROVIDERS === "true" && process.env.ANTHROPIC_API_KEY?[{provider:anthropic,run:()=>askAnthropic(messages)}]:[])
   ];
