@@ -48,6 +48,19 @@ const compatibleProviders = [
   model:process.env.CLOUDFLARE_CHAT_MODEL||"@cf/meta/llama-3.1-8b-instruct"
 }]);
 
+// NEXUS runs in free-only mode by default. Paid providers remain blocked
+// even if their API keys exist in Render. Explicit opt-in is required to unlock them.
+const FREE_PROVIDER_NAMES = new Set([
+  "Gemini",
+  "Groq",
+  "OpenRouter",
+  "Cerebras",
+  "Cloudflare Workers AI"
+]);
+function providerIsAllowed(p){
+  return process.env.NEXUS_ALLOW_PAID_PROVIDERS === "true" || FREE_PROVIDER_NAMES.has(p.name);
+}
+
 const anthropic = {
   name:"Anthropic (Claude)", key:"ANTHROPIC_API_KEY",
   url:(process.env.ANTHROPIC_BASE_URL||"https://api.anthropic.com").replace(/\/$/,"")+"/v1/messages",
@@ -101,9 +114,9 @@ app.post("/api/media/image",dailyImageLimit,async(req,res)=>{
 app.get("/api/health",(_req,res)=>res.json({ok:true,app:"NEXUS AI",version:"1.3.0"}));
 app.get("/api/status",(_req,res)=>res.json({
   providers:[
-    ...compatibleProviders.map(p=>({name:p.name,configured:Boolean(process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)),model:p.model})),
-    {name:anthropic.name,configured:Boolean(process.env[anthropic.key]),model:anthropic.model},
-    {name:ollama.name,configured:ollamaEnabled,model:ollama.model,local:true}
+    ...compatibleProviders.map(p=>({name:p.name,configured:Boolean(process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)),enabled:Boolean(process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)&&providerIsAllowed(p)),model:p.model})),
+    {name:anthropic.name,configured:Boolean(process.env[anthropic.key]),enabled:false,model:anthropic.model},
+    {name:ollama.name,configured:ollamaEnabled,enabled:ollamaEnabled,model:ollama.model,local:true}
   ],
   imageGeneration:{available:Boolean(process.env.CLOUDFLARE_ACCOUNT_ID&&process.env.CLOUDFLARE_API_TOKEN),provider:"Cloudflare Workers AI · FLUX.1 Schnell",dailyPerIpLimit:3,dailyGlobalLimit:30},videoGeneration:{available:false,reason:"Vídeo queda desactivado hasta integrar un proveedor que no requiera pagos ni créditos de NEXUS."}
 }));
@@ -167,8 +180,8 @@ app.post("/api/chat",rateLimit,async(req,res)=>{
   let messages;
   try{messages=validateMessages(req.body?.messages);}catch(e){return res.status(400).json({error:e.message});}
   const available=[
-    ...compatibleProviders.filter(p=>process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
-    ...(process.env.ANTHROPIC_API_KEY?[{provider:anthropic,run:()=>askAnthropic(messages)}]:[]),
+    ...compatibleProviders.filter(p=>process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)&&providerIsAllowed(p)).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
+    ...(process.env.NEXUS_ALLOW_PAID_PROVIDERS === "true" && process.env.ANTHROPIC_API_KEY?[{provider:anthropic,run:()=>askAnthropic(messages)}]:[]),
     ...(ollamaEnabled?[{provider:ollama,run:()=>askCompatible(ollama,messages)}]:[])
   ];
   if(!available.length)return res.status(503).json({error:"No hay proveedores configurados. Añade una API key privada en Render o activa Ollama en un servidor al que NEXUS pueda acceder."});
