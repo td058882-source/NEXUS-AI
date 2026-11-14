@@ -1,0 +1,13 @@
+{
+  "appId": "com.nexusai.app",
+  "appName": "NEXUS AI",
+  "webDir": "public",
+  "server": {
+    "url": "https://nexus-ai-tnkq.onrender.com",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
