@@ -16,7 +16,7 @@ app.use(express.static(path.join(__dirname,"public")));
 // OpenAI-compatible providers. Each provider activates only when its private API key exists.
 const compatibleProviders = [
   ["OpenAI","OPENAI","https://api.openai.com/v1","gpt-4.1-mini"],
-  ["Gemini","GEMINI","https://generativelanguage.googleapis.com/v1beta/openai","gemini-3.8-flash"],
+  ["Gemini","GEMINI","https://generativelanguage.googleapis.com/v1beta/openai","gemini-3.6-flash"],
   ["Groq","GROQ","https://api.groq.com/openai/v1","llama-3.3-70b-versatile"],
   ["OpenRouter","OPENROUTER","https://openrouter.ai/api/v1","openrouter/free"],
   ["Mistral","MISTRAL","https://api.mistral.ai/v1","mistral-small-latest"],
@@ -80,8 +80,17 @@ function validateMessages(input){
 async function askCompatible(p,messages){
   const headers={"Content-Type":"application/json"};
   if(p.key)headers.Authorization="Bearer "+process.env[p.key];
-  const response=await fetch(p.url,{method:"POST",headers,body:JSON.stringify({model:p.model,messages,temperature:0.7}),signal:AbortSignal.timeout(60000)});
-  const data=await response.json().catch(()=>({}));
+  let response, data={};
+  for(let attempt=0;attempt<3;attempt++){
+    response=await fetch(p.url,{method:"POST",headers,body:JSON.stringify({model:p.model,messages,temperature:0.7}),signal:AbortSignal.timeout(60000)});
+    data=await response.json().catch(()=>({}));
+    if(response.ok)break;
+    // Retry temporary provider overload/rate-limit errors before falling back.
+    if(![429,500,502,503,504].includes(response.status)||attempt===2){
+      throw new Error(data.error?.message||"HTTP "+response.status);
+    }
+    await new Promise(resolve=>setTimeout(resolve,700*(2**attempt)));
+  }
   if(!response.ok)throw new Error(data.error?.message||"HTTP "+response.status);
   const reply=data.choices?.[0]?.message?.content;
   if(typeof reply!=="string"||!reply.trim())throw new Error("El proveedor devolvió una respuesta vacía.");
