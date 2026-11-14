@@ -79,6 +79,18 @@ jobs:
           p.write_text(s)
           PY
 
+      - name: Build installable Android APK (debug)
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-ai-android-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Build Android App Bundle
         working-directory: android
         run: ./gradlew bundleRelease
