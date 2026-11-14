@@ -184,7 +184,7 @@ function validateMessages(input){
 }
 async function askCompatible(p,messages){
   const headers={"Content-Type":"application/json"};
-  if(p.key)headers.Authorization="Bearer "+process.env[p.key];
+  if(p.key&&process.env[p.key])headers.Authorization="Bearer "+process.env[p.key];
   let response, data={};
   for(let attempt=0;attempt<4;attempt++){
     try{
