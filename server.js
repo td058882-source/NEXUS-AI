@@ -67,7 +67,8 @@ const FREE_PROVIDER_NAMES = new Set([
   "Groq",
   "OpenRouter",
   "Cerebras",
-  "Cloudflare Workers AI"
+  "Cloudflare Workers AI",
+  "Cloudflare Workers AI · GLM-4.7 Flash"
 ]);
 function providerIsAllowed(p){
   return process.env.NEXUS_ALLOW_PAID_PROVIDERS === "true" || FREE_PROVIDER_NAMES.has(p.name);
