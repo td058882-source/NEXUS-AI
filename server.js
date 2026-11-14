@@ -281,5 +281,98 @@ app.post("/api/chat",rateLimit,async(req,res)=>{
   }
   res.status(502).json({error:"Todos los proveedores configurados han fallado.",details:errors});
 });
+
+app.post("/api/chat/stream",rateLimit,async(req,res)=>{
+  let messages;
+  try{messages=validateMessages(req.body?.messages);}catch(e){return res.status(400).json({error:e.message});}
+  messages=prepareMessages(messages);
+  const available=[
+    ...localProviders.filter(p=>p.enabled).map(p=>({provider:p})),
+    ...compatibleProviders.filter(p=>process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)&&providerIsAllowed(p)).map(p=>({provider:p})),
+    ...(process.env.NEXUS_ALLOW_PAID_PROVIDERS === "true" && process.env.ANTHROPIC_API_KEY?[{provider:anthropic}]:[])
+  ];
+  if(!available.length)return res.status(503).json({error:"No hay proveedores configurados."});
+  const requestedProvider=typeof req.body?.provider==="string"?req.body.provider.trim():"";
+  const candidates=requestedProvider?available.filter(item=>item.provider.name===requestedProvider):available;
+  if(requestedProvider&&!candidates.length)return res.status(400).json({error:"El proveedor solicitado no está configurado o no existe."});
+
+  const sendEvent=(event,data)=>res.write("event: "+event+"\ndata: "+JSON.stringify(data)+"\n\n");
+  let started=false;
+  const start=(provider)=>{
+    if(started)return;
+    started=true;
+    res.status(200);
+    res.setHeader("Content-Type","text/event-stream; charset=utf-8");
+    res.setHeader("Cache-Control","no-cache, no-transform");
+    res.setHeader("Connection","keep-alive");
+    res.flushHeaders?.();
+    sendEvent("meta",{provider});
+  };
+  const errors=[];
+  for(const item of candidates){
+    const p=item.provider;
+    try{
+      if(p.local){
+        const headers={"Content-Type":"application/json"};
+        if(p.key&&process.env[p.key])headers.Authorization="Bearer "+process.env[p.key];
+        const body={model:p.model,messages,temperature:0.35,stream:true,keep_alive:"30m",options:{num_ctx:2048,num_predict:512}};
+        const upstream=await fetch(p.url,{method:"POST",headers,body:JSON.stringify(body),signal:AbortSignal.timeout(90000)});
+        if(!upstream.ok){
+          const detail=await upstream.json().catch(()=>({}));
+          throw new Error(detail.error?.message||detail.message||("HTTP "+upstream.status));
+        }
+        if(!upstream.body)throw new Error("El proveedor no admite streaming.");
+        start(p.name);
+        const reader=upstream.body.getReader(),decoder=new TextDecoder();
+        let buffer="";
+        while(true){
+          const {value,done}=await reader.read();
+          if(done)break;
+          buffer+=decoder.decode(value,{stream:true});
+          const lines=buffer.split(/\r?\n/);
+          buffer=lines.pop()||"";
+          for(const line of lines){
+            const trimmed=line.trim();
+            if(!trimmed.startsWith("data:"))continue;
+            const payload=trimmed.slice(5).trim();
+            if(!payload||payload==="[DONE]")continue;
+            try{
+              const chunk=JSON.parse(payload);
+              const token=chunk.choices?.[0]?.delta?.content;
+              if(typeof token==="string"&&token)sendEvent("token",{text:token});
+            }catch(_){}
+          }
+        }
+        if(buffer.trim().startsWith("data:")){
+          const payload=buffer.trim().slice(5).trim();
+          if(payload&&payload!=="[DONE]"){
+            try{const chunk=JSON.parse(payload);const token=chunk.choices?.[0]?.delta?.content;if(typeof token==="string"&&token)sendEvent("token",{text:token});}catch(_){}
+          }
+        }
+        sendEvent("done",{provider:p.name});
+        return res.end();
+      }
+      let reply;
+      if(p===anthropic)reply=await askAnthropic(messages);
+      else reply=await askCompatible(p,messages);
+      start(p.name);
+      sendEvent("token",{text:reply});
+      sendEvent("done",{provider:p.name});
+      return res.end();
+    }catch(error){
+      errors.push(p.name+": "+(error.name==="TimeoutError"?"tiempo de espera agotado":error.message));
+      if(started){
+        sendEvent("error",{message:"La conexión se interrumpió: "+error.message});
+        return res.end();
+      }
+    }
+  }
+  if(!started){
+    start("NEXUS");
+    sendEvent("error",{message:"Todos los proveedores configurados han fallado. "+errors.join(" · ")});
+  }
+  return res.end();
+});
+
 const port=process.env.PORT||3000;
 app.listen(port,"0.0.0.0",()=>console.log("NEXUS AI listo en el puerto "+port));
