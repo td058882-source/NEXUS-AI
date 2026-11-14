@@ -163,6 +163,7 @@ document.querySelector("#testGroq").addEventListener("click",async()=>{const btn
 form.addEventListener("submit",async e=>{
  e.preventDefault();const t=input.value.trim();if(!t)return;input.value="";
  history.push({role:"user",content:t});add(t,"user");send.disabled=true;send.textContent="…";
+ const requestStartedAt=performance.now();
  const replyEl=document.createElement("div");replyEl.className="msg assistant";replyEl.textContent="";messagesEl.append(replyEl);
  let fullReply="",received=false;
  try{
@@ -171,7 +172,9 @@ form.addEventListener("submit",async e=>{
   });
   if(!received)throw Error("El proveedor devolvió una respuesta vacía.");
   history.push({role:"assistant",content:fullReply});if(history.length>16)history=history.slice(-16);
-  const meta=document.createElement("div");meta.className="msgmeta";meta.textContent="Respondido por "+d.provider;replyEl.append(meta);
+  const elapsedSeconds=(performance.now()-requestStartedAt)/1000;
+  const elapsedLabel=new Intl.NumberFormat("es-ES",{minimumFractionDigits:1,maximumFractionDigits:1}).format(elapsedSeconds);
+  const meta=document.createElement("div");meta.className="msgmeta";meta.textContent="Respondido por "+d.provider+" · "+elapsedLabel+" s";replyEl.append(meta);
  }catch(err){
   if(received){replyEl.classList.add("error");replyEl.textContent=fullReply+"\n\n[Conexión interrumpida: "+err.message+"]";}
   else {replyEl.remove();add("No se pudo completar la respuesta: "+err.message,"assistant","error");history.pop();}
