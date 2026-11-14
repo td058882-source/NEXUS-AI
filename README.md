@@ -152,11 +152,13 @@ docker compose exec ollama ollama pull llama3.2
 
 Después abre `http://localhost:3000`. Comprueba `/api/status`: Ollama debe aparecer como configurado y activado. La primera descarga del modelo puede tardar y ocupar varios GB.
 
-Para activar también LocalAI, inicia el perfil opcional:
+Para activar también LocalAI, inicia el perfil opcional y habilita su proveedor en NEXUS:
 
 ```bash
-docker compose --profile localai up -d --build
+LOCALAI_ENABLED=true docker compose --profile localai up -d --build
 ```
+
+En PowerShell usa `$env:LOCALAI_ENABLED="true"` antes del comando `docker compose`.
 
 Configura en el panel de LocalAI un modelo compatible y ajusta `LOCALAI_MODEL` al identificador exacto instalado. NEXUS prueba primero Ollama, después LocalAI y finalmente los proveedores externos gratuitos configurados.
 
