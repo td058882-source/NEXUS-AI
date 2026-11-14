@@ -210,14 +210,21 @@ async function askCompatible(p,messages){
   const headers={"Content-Type":"application/json"};
   if(p.key&&process.env[p.key])headers.Authorization="Bearer "+process.env[p.key];
   let response, data={};
-  for(let attempt=0;attempt<4;attempt++){
+  // Keep local models resident in RAM and limit generation/context for low-resource devices.
+  const requestBody={model:p.model,messages,temperature:0.35};
+  if(p.local){
+    requestBody.keep_alive="30m";
+    requestBody.options={num_ctx:2048,num_predict:512};
+  }
+  const maxAttempts=p.local?1:4;
+  for(let attempt=0;attempt<maxAttempts;attempt++){
     try{
-      response=await fetch(p.url,{method:"POST",headers,body:JSON.stringify({model:p.model,messages,temperature:0.35}),signal:AbortSignal.timeout(60000)});
+      response=await fetch(p.url,{method:"POST",headers,body:JSON.stringify(requestBody),signal:AbortSignal.timeout(p.local?90000:60000)});
       data=await response.json().catch(()=>({}));
     }catch(error){
       // A fetch timeout/network error throws before an HTTP response exists.
       // Retry it once; then let the provider fallback logic try the next provider.
-      if(attempt>=1||!["TimeoutError","AbortError","TypeError"].includes(error.name))throw error;
+      if(attempt>=maxAttempts-1||!["TimeoutError","AbortError","TypeError"].includes(error.name))throw error;
       const delay=1500+Math.floor(Math.random()*500);
       console.warn(`Proveedor ${p.name} falló por ${error.name}; reintentando una vez en ${delay}ms.`);
       await new Promise(resolve=>setTimeout(resolve,delay));
@@ -225,7 +232,7 @@ async function askCompatible(p,messages){
     }
     if(response.ok)break;
     // Retry temporary provider overload/rate-limit errors before falling back.
-    if(![408,429,500,502,503,504].includes(response.status)||attempt===3){
+    if(![408,429,500,502,503,504].includes(response.status)||attempt===maxAttempts-1){
       const detail=data.error?.message||data.message||("HTTP "+response.status);
       throw new Error(detail);
     }
