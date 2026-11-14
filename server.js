@@ -49,6 +49,15 @@ const compatibleProviders = [
     ? "https://api.cloudflare.com/client/v4/accounts/"+encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)+"/ai/v1/chat/completions"
     : "",
   model:process.env.CLOUDFLARE_CHAT_MODEL||"@cf/google/gemma-4-26b-a4b-it"
+}, {
+  // Second free-tier Cloudflare model; shares the same daily Neurons allowance.
+  name:"Cloudflare Workers AI · GLM-4.7 Flash",
+  key:"CLOUDFLARE_API_TOKEN",
+  requiresAccountId:true,
+  url:process.env.CLOUDFLARE_ACCOUNT_ID
+    ? "https://api.cloudflare.com/client/v4/accounts/"+encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)+"/ai/v1/chat/completions"
+    : "",
+  model:"@cf/zai-org/glm-4.7-flash"
 }]);
 
 // NEXUS runs in free-only mode by default. Paid providers remain blocked
