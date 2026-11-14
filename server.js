@@ -36,7 +36,17 @@ const compatibleProviders = [
   name, key:prefix+"_API_KEY",
   url:(process.env[prefix+"_BASE_URL"]||defaultBase).replace(/\/$/,"")+"/chat/completions",
   model:process.env[prefix+"_MODEL"]||defaultModel
-}));
+})).concat([{
+  // Reuses the Cloudflare account/token already used by image generation.
+  // Workers AI exposes an OpenAI-compatible Chat Completions endpoint.
+  name:"Cloudflare Workers AI",
+  key:"CLOUDFLARE_API_TOKEN",
+  requiresAccountId:true,
+  url:process.env.CLOUDFLARE_ACCOUNT_ID
+    ? "https://api.cloudflare.com/client/v4/accounts/"+encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)+"/ai/v1/chat/completions"
+    : "",
+  model:process.env.CLOUDFLARE_CHAT_MODEL||"@cf/meta/llama-3.1-8b-instruct"
+}]);
 
 const anthropic = {
   name:"Anthropic (Claude)", key:"ANTHROPIC_API_KEY",
@@ -91,7 +101,7 @@ app.post("/api/media/image",dailyImageLimit,async(req,res)=>{
 app.get("/api/health",(_req,res)=>res.json({ok:true,app:"NEXUS AI",version:"1.3.0"}));
 app.get("/api/status",(_req,res)=>res.json({
   providers:[
-    ...compatibleProviders.map(p=>({name:p.name,configured:Boolean(process.env[p.key]),model:p.model})),
+    ...compatibleProviders.map(p=>({name:p.name,configured:Boolean(process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)),model:p.model})),
     {name:anthropic.name,configured:Boolean(process.env[anthropic.key]),model:anthropic.model},
     {name:ollama.name,configured:ollamaEnabled,model:ollama.model,local:true}
   ],
@@ -157,7 +167,7 @@ app.post("/api/chat",rateLimit,async(req,res)=>{
   let messages;
   try{messages=validateMessages(req.body?.messages);}catch(e){return res.status(400).json({error:e.message});}
   const available=[
-    ...compatibleProviders.filter(p=>process.env[p.key]).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
+    ...compatibleProviders.filter(p=>process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
     ...(process.env.ANTHROPIC_API_KEY?[{provider:anthropic,run:()=>askAnthropic(messages)}]:[]),
     ...(ollamaEnabled?[{provider:ollama,run:()=>askCompatible(ollama,messages)}]:[])
   ];
