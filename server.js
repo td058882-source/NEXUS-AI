@@ -132,8 +132,13 @@ app.post("/api/chat",rateLimit,async(req,res)=>{
     ...(ollamaEnabled?[{provider:ollama,run:()=>askCompatible(ollama,messages)}]:[])
   ];
   if(!available.length)return res.status(503).json({error:"No hay proveedores configurados. Añade una API key privada en Render o activa Ollama en un servidor al que NEXUS pueda acceder."});
+  const requestedProvider=typeof req.body?.provider==="string"?req.body.provider.trim():"";
+  const candidates=requestedProvider?available.filter(item=>item.provider.name===requestedProvider):available;
+  if(requestedProvider&&!candidates.length){
+    return res.status(400).json({error:"El proveedor solicitado no está configurado o no existe."});
+  }
   const errors=[];
-  for(const item of available){
+  for(const item of candidates){
     try{return res.json({provider:item.provider.name,reply:await item.run()});}
     catch(error){errors.push(item.provider.name+": "+(error.name==="TimeoutError"?"tiempo de espera agotado":error.message));}
   }
