@@ -69,3 +69,99 @@ Configura las claves como variables privadas en el apartado **Environment** del 
 ## Estado
 
 Versión 1.4: interfaz web, motores locales Ollama y LocalAI, proveedores externos con fallback, endpoint de estado, validación de entrada y comprobación de salud.
+
+
+## Ejecutar NEXUS con Docker, Ollama y LocalAI
+
+Esta configuración ejecuta NEXUS y Ollama en una misma red Docker. Así NEXUS puede llamar a Ollama mediante el nombre interno `ollama`, sin exponer el puerto del motor a Internet. LocalAI es opcional.
+
+### 1. Dockerfile
+
+Crea un archivo llamado `Dockerfile` en la raíz con este contenido:
+
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+COPY package*.json ./
+RUN npm install --omit=dev && npm cache clean --force
+COPY . .
+USER node
+EXPOSE 3000
+CMD ["npm","start"]
+```
+
+### 2. docker-compose.yml
+
+Crea `docker-compose.yml` en la raíz:
+
+```yaml
+services:
+  nexus:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      OLLAMA_ENABLED: "true"
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      LOCALAI_ENABLED: ${LOCALAI_ENABLED:-false}
+      LOCALAI_BASE_URL: http://localai:8080
+      LOCALAI_MODEL: ${LOCALAI_MODEL:-gpt-4}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID:-}
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  localai:
+    image: localai/localai:latest
+    profiles: ["localai"]
+    ports:
+      - "8080:8080"
+    environment:
+      MODELS_PATH: /models
+    volumes:
+      - localai_models:/models
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  localai_models:
+```
+
+### 3. Arrancar
+
+Instala Docker Desktop y abre una terminal en la carpeta del proyecto:
+
+```bash
+docker compose up -d --build
+docker compose exec ollama ollama pull llama3.2
+```
+
+Después abre `http://localhost:3000`. Comprueba `/api/status`: Ollama debe aparecer como configurado y activado. La primera descarga del modelo puede tardar y ocupar varios GB.
+
+Para activar también LocalAI, inicia el perfil opcional:
+
+```bash
+docker compose --profile localai up -d --build
+```
+
+Configura en el panel de LocalAI un modelo compatible y ajusta `LOCALAI_MODEL` al identificador exacto instalado. NEXUS prueba primero Ollama, después LocalAI y finalmente los proveedores externos gratuitos configurados.
+
+### 4. Variables opcionales
+
+Puedes crear un archivo `.env` junto al compose para guardar `GEMINI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID`. No lo subas a GitHub. Añade `.env` al `.gitignore`.
+
+**Importante:** esta pila local es independiente de Render. Render no puede acceder al Ollama que se ejecuta en tu PC mediante `127.0.0.1`. No abras el puerto 11434 directamente a Internet. El uso local no tiene coste por token, pero requiere que el ordenador esté encendido y tenga recursos suficientes.
