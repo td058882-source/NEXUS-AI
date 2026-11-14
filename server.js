@@ -55,6 +55,22 @@ const compatibleProviders = [
     : "",
   model:process.env.CLOUDFLARE_CHAT_MODEL||"@cf/google/gemma-4-26b-a4b-it"
 }, {
+  name:"Cloudflare Workers AI · Qwen 3.8 27B",
+  key:"CLOUDFLARE_API_TOKEN",
+  requiresAccountId:true,
+  url:process.env.CLOUDFLARE_ACCOUNT_ID
+    ? "https://api.cloudflare.com/client/v4/accounts/"+encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)+"/ai/v1/chat/completions"
+    : "",
+  model:"@cf/qwen/qwen3.8-27b"
+}, {
+  name:"Cloudflare Workers AI · Llama 3.3 70B",
+  key:"CLOUDFLARE_API_TOKEN",
+  requiresAccountId:true,
+  url:process.env.CLOUDFLARE_ACCOUNT_ID
+    ? "https://api.cloudflare.com/client/v4/accounts/"+encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)+"/ai/v1/chat/completions"
+    : "",
+  model:"@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+}, {
   // Second free-tier Cloudflare model; shares the same daily Neurons allowance.
   name:"Cloudflare Workers AI · GLM-4.7 Flash",
   key:"CLOUDFLARE_API_TOKEN",
@@ -77,6 +93,8 @@ const FREE_PROVIDER_NAMES = new Set([
   "Groq · Qwen 3.8 27B",
   "OpenRouter",
   "Cloudflare Workers AI",
+  "Cloudflare Workers AI · Qwen 3.8 27B",
+  "Cloudflare Workers AI · Llama 3.3 70B",
   "Cloudflare Workers AI · GLM-4.7 Flash"
 ]);
 function providerIsAllowed(p){
