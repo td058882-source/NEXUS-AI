@@ -1,0 +1,43 @@
+services:
+  nexus:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      OLLAMA_ENABLED: "true"
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      LOCALAI_ENABLED: ${LOCALAI_ENABLED:-false}
+      LOCALAI_BASE_URL: http://localai:8080
+      LOCALAI_MODEL: ${LOCALAI_MODEL:-gpt-4}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID:-}
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  localai:
+    image: localai/localai:latest
+    profiles: ["localai"]
+    ports:
+      - "8080:8080"
+    environment:
+      MODELS_PATH: /models
+    volumes:
+      - localai_models:/models
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  localai_models:
