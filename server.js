@@ -21,6 +21,8 @@ const compatibleProviders = [
   ["Gemini 3.7 Flash","GEMINI","https://generativelanguage.googleapis.com/v1beta/openai","gemini-3.7-flash"],
   ["Gemini 3.5 Flash-Lite","GEMINI","https://generativelanguage.googleapis.com/v1beta/openai","gemini-3.5-flash-lite"],
   ["Groq","GROQ","https://api.groq.com/openai/v1","openai/gpt-oss-20b"],
+  ["Groq · GPT-OSS 120B","GROQ","https://api.groq.com/openai/v1","openai/gpt-oss-120b"],
+  ["Groq · Qwen 3.8 27B","GROQ","https://api.groq.com/openai/v1","qwen/qwen3.8-27b"],
   ["OpenRouter","OPENROUTER","https://openrouter.ai/api/v1","openrouter/free"],
   ["Mistral","MISTRAL","https://api.mistral.ai/v1","mistral-small-latest"],
   // DeepSeek API uses a paid token balance; kept blocked by the free-only allowlist below.
@@ -53,14 +55,6 @@ const compatibleProviders = [
     : "",
   model:process.env.CLOUDFLARE_CHAT_MODEL||"@cf/google/gemma-4-26b-a4b-it"
 }, {
-  name:"Cloudflare Workers AI · Nemotron 120B",
-  key:"CLOUDFLARE_API_TOKEN",
-  requiresAccountId:true,
-  url:process.env.CLOUDFLARE_ACCOUNT_ID
-    ? "https://api.cloudflare.com/client/v4/accounts/"+encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)+"/ai/v1/chat/completions"
-    : "",
-  model:"@cf/nvidia/nemotron-3-120b-a12b"
-}, {
   // Second free-tier Cloudflare model; shares the same daily Neurons allowance.
   name:"Cloudflare Workers AI · GLM-4.7 Flash",
   key:"CLOUDFLARE_API_TOKEN",
@@ -79,10 +73,10 @@ const FREE_PROVIDER_NAMES = new Set([
   "Gemini 3.7 Flash",
   "Gemini 3.5 Flash-Lite",
   "Groq",
+  "Groq · GPT-OSS 120B",
+  "Groq · Qwen 3.8 27B",
   "OpenRouter",
-  "Cerebras",
   "Cloudflare Workers AI",
-  "Cloudflare Workers AI · Nemotron 120B",
   "Cloudflare Workers AI · GLM-4.7 Flash"
 ]);
 function providerIsAllowed(p){
