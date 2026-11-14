@@ -38,7 +38,12 @@ jobs:
       - name: Install web and Capacitor dependencies
         run: |
           npm install
-          npm install --no-save @capacitor/core@^7 @capacitor/android@^7 @capacitor/cli@^7
+          npm install --no-save @capacitor/core@^7 @capacitor/android@^7 @capacitor/cli@^7 @capacitor/assets sharp
+
+      - name: Generate branded Android assets
+        run: |
+          node scripts/generate-android-assets.mjs
+          npx capacitor-assets generate --android
 
       - name: Generate Android project
         run: |
