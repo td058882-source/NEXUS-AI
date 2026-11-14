@@ -106,12 +106,24 @@ const anthropic = {
   url:(process.env.ANTHROPIC_BASE_URL||"https://api.anthropic.com").replace(/\/$/,"")+"/v1/messages",
   model:process.env.ANTHROPIC_MODEL||"claude-3-5-haiku-latest"
 };
-const ollamaEnabled = process.env.OLLAMA_ENABLED === "true";
-const ollama = {
-  name:"Ollama (local)", key:null,
-  url:(process.env.OLLAMA_BASE_URL||"http://127.0.0.1:11434/v1").replace(/\/$/,"")+"/chat/completions",
-  model:process.env.OLLAMA_MODEL||"llama3.2"
-};
+// Local inference engines are opt-in and must be reachable from this backend.
+// On Render, 127.0.0.1 refers to the Render container, not the user's computer.
+function localProvider(name, prefix, defaultPort, defaultModel) {
+  const baseUrl=(process.env[prefix+"_BASE_URL"]||"").trim().replace(/\/$/,"");
+  const enabled=process.env[prefix+"_ENABLED"]==="true" && Boolean(baseUrl);
+  return {
+    name,
+    key:prefix+"_API_KEY",
+    url:baseUrl ? (baseUrl.endsWith("/v1") ? baseUrl : baseUrl+"/v1")+"/chat/completions" : "",
+    model:process.env[prefix+"_MODEL"]||defaultModel,
+    enabled,
+    configured:Boolean(baseUrl),
+    local:true
+  };
+}
+const ollama=localProvider("Ollama (local)","OLLAMA","11434","llama3.2");
+const localAI=localProvider("LocalAI (local)","LOCALAI","8080","gpt-4");
+const localProviders=[ollama,localAI];
 
 const requestCounts = new Map();
 function rateLimit(req,res,next){
@@ -156,7 +168,7 @@ app.get("/api/status",(_req,res)=>res.json({
   providers:[
     ...compatibleProviders.map(p=>({name:p.name,configured:Boolean(process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)),enabled:Boolean(process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)&&providerIsAllowed(p)),model:p.model})),
     {name:anthropic.name,configured:Boolean(process.env[anthropic.key]),enabled:false,model:anthropic.model},
-    {name:ollama.name,configured:ollamaEnabled,enabled:ollamaEnabled,model:ollama.model,local:true}
+    ...localProviders.map(p=>({name:p.name,configured:p.configured,enabled:p.enabled,model:p.model,local:true}))
   ],
   imageGeneration:{available:Boolean(process.env.CLOUDFLARE_ACCOUNT_ID&&process.env.CLOUDFLARE_API_TOKEN),provider:"Cloudflare Workers AI · FLUX.1 Schnell",dailyPerIpLimit:3,dailyGlobalLimit:30},videoGeneration:{available:false,reason:"Vídeo queda desactivado hasta integrar un proveedor que no requiera pagos ni créditos de NEXUS."}
 }));
@@ -220,9 +232,9 @@ app.post("/api/chat",rateLimit,async(req,res)=>{
   let messages;
   try{messages=validateMessages(req.body?.messages);}catch(e){return res.status(400).json({error:e.message});}
   const available=[
+    ...localProviders.filter(p=>p.enabled).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
     ...compatibleProviders.filter(p=>process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)&&providerIsAllowed(p)).map(p=>({provider:p,run:()=>askCompatible(p,messages)})),
-    ...(process.env.NEXUS_ALLOW_PAID_PROVIDERS === "true" && process.env.ANTHROPIC_API_KEY?[{provider:anthropic,run:()=>askAnthropic(messages)}]:[]),
-    ...(ollamaEnabled?[{provider:ollama,run:()=>askCompatible(ollama,messages)}]:[])
+    ...(process.env.NEXUS_ALLOW_PAID_PROVIDERS === "true" && process.env.ANTHROPIC_API_KEY?[{provider:anthropic,run:()=>askAnthropic(messages)}]:[])
   ];
   if(!available.length)return res.status(503).json({error:"No hay proveedores configurados. Añade una API key privada en Render o activa Ollama en un servidor al que NEXUS pueda acceder."});
   const requestedProvider=typeof req.body?.provider==="string"?req.body.provider.trim():"";
