@@ -58,14 +58,44 @@ function rateLimit(req,res,next){
   if(entry.count>30)return res.status(429).json({error:"Has enviado demasiadas solicitudes. Espera un minuto."});
   next();
 }
-app.get("/api/health",(_req,res)=>res.json({ok:true,app:"NEXUS AI",version:"1.2.0"}));
+
+const imageDailyCounts = new Map();
+let imageGlobalDay = "", imageGlobalCount = 0;
+function dailyImageLimit(req,res,next){
+  const day=new Date().toISOString().slice(0,10),ip=req.ip||"unknown";
+  if(imageGlobalDay!==day){imageGlobalDay=day;imageGlobalCount=0;imageDailyCounts.clear();}
+  const entry=imageDailyCounts.get(ip)||{day,count:0};
+  if(entry.count>=3)return res.status(429).json({error:"Has alcanzado el límite gratuito de 3 imágenes hoy. Vuelve mañana."});
+  if(imageGlobalCount>=30)return res.status(429).json({error:"NEXUS ha alcanzado su cupo diario de imágenes. Vuelve mañana."});
+  entry.count++;imageDailyCounts.set(ip,entry);imageGlobalCount++;next();
+}
+app.post("/api/media/image",dailyImageLimit,async(req,res)=>{
+  const prompt=typeof req.body?.prompt==="string"?req.body.prompt.trim():"";
+  if(!prompt||prompt.length>1800)return res.status(400).json({error:"Escribe una descripción de entre 1 y 1.800 caracteres."});
+  const account=process.env.CLOUDFLARE_ACCOUNT_ID,token=process.env.CLOUDFLARE_API_TOKEN;
+  if(!account||!token)return res.status(503).json({error:"La generación de imágenes aún no está activada. Falta configurar CLOUDFLARE_ACCOUNT_ID y CLOUDFLARE_API_TOKEN en Render."});
+  try{
+    const endpoint="https://api.cloudflare.com/client/v4/accounts/"+encodeURIComponent(account)+"/ai/run/@cf/black-forest-labs/flux-1-schnell";
+    const upstream=await fetch(endpoint,{method:"POST",headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({prompt,steps:4}),signal:AbortSignal.timeout(120000)});
+    const data=await upstream.json().catch(()=>({}));
+    if(!upstream.ok||data.success===false)throw new Error(data.errors?.[0]?.message||"El proveedor de imágenes respondió HTTP "+upstream.status);
+    const encoded=data.result?.image||data.result;
+    if(typeof encoded!=="string"||!encoded.length)throw new Error("El proveedor no devolvió una imagen válida.");
+    res.json({image:"data:image/jpeg;base64,"+encoded,provider:"Cloudflare Workers AI · FLUX.1 Schnell"});
+  }catch(error){
+    console.error("NEXUS image generation:",error.message);
+    res.status(502).json({error:"No se pudo generar la imagen. Puede que el proveedor esté ocupado o que se haya agotado la cuota gratuita."});
+  }
+});
+
+app.get("/api/health",(_req,res)=>res.json({ok:true,app:"NEXUS AI",version:"1.3.0"}));
 app.get("/api/status",(_req,res)=>res.json({
   providers:[
     ...compatibleProviders.map(p=>({name:p.name,configured:Boolean(process.env[p.key]),model:p.model})),
     {name:anthropic.name,configured:Boolean(process.env[anthropic.key]),model:anthropic.model},
     {name:ollama.name,configured:ollamaEnabled,model:ollama.model,local:true}
   ],
-  imageGeneration:{available:false,reason:"La generación de imágenes requiere un proveedor específico. No se activará ningún servicio de pago sin autorización."}
+  imageGeneration:{available:Boolean(process.env.CLOUDFLARE_ACCOUNT_ID&&process.env.CLOUDFLARE_API_TOKEN),provider:"Cloudflare Workers AI · FLUX.1 Schnell",dailyPerIpLimit:3,dailyGlobalLimit:30},videoGeneration:{available:false,reason:"Vídeo queda desactivado hasta integrar un proveedor que no requiera pagos ni créditos de NEXUS."}
 }));
 
 function validateMessages(input){
