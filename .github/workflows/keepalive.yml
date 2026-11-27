@@ -1,4 +1,4 @@
-name: Keep NEXUS AI awake for search crawlers
+name: Keep TAYVEXA awake for search crawlers
 
 on:
   schedule:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: nexus-keepalive
+  group: tayvexa-keepalive
   cancel-in-progress: true
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Wake and check NEXUS AI
+      - name: Wake and check TAYVEXA
         run: |
           curl --fail --silent --show-error \
             --max-time 30 \
