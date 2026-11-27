@@ -1,7 +1,7 @@
 # TAYVEXA — preparación para Google Play (Android)
 
 ## Estado
-- Identificador Android reservado: `com.tayvexa.app`
+- Identificador Android reservado: `com.nexusai.app`
 - Nombre de tienda: TAYVEXA
 - Modelo de distribución previsto: gratuita
 - Monetización: ninguna inicialmente (sin anuncios ni membresías)
