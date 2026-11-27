@@ -1,8 +1,8 @@
-# NEXUS AI — preparación para Google Play (Android)
+# TAYVEXA — preparación para Google Play (Android)
 
 ## Estado
 - Identificador Android reservado: `com.nexusai.app`
-- Nombre de tienda: NEXUS AI
+- Nombre de tienda: TAYVEXA
 - Modelo de distribución previsto: gratuita
 - Monetización: ninguna inicialmente (sin anuncios ni membresías)
 - Backend: https://nexus-ai-tnkq.onrender.com
@@ -11,9 +11,9 @@
 
 ## Cómo generar el AAB
 1. Abre el repositorio GitHub y entra en **Actions**.
-2. Selecciona **Build NEXUS AI for Android**.
+2. Selecciona **Build TAYVEXA for Android**.
 3. Pulsa **Run workflow** en la rama `main`.
-4. Cuando termine, abre la ejecución y descarga el artefacto `nexus-ai-android-aab`.
+4. Cuando termine, abre la ejecución y descarga el artefacto `tayvexa-android-aab`.
 5. El AAB solo estará firmado para Play si el repositorio tiene configurados los cuatro secretos de firma indicados abajo. Sin ellos, será un paquete de prueba sin firma de publicación.
 
 ## Firma de publicación — imprescindible
@@ -28,12 +28,12 @@ Configura estos GitHub Actions secrets en **Settings → Secrets and variables �
 No pierdas el keystore ni sus contraseñas: son necesarios para futuras actualizaciones. No pegues estos secretos en conversaciones.
 
 ## Ficha inicial de Google Play
-**Nombre:** NEXUS AI
+**Nombre:** TAYVEXA
 
 **Descripción breve (borrador):** Tu espacio de inteligencia artificial para conversar, explorar ideas y crear.
 
 **Descripción completa (borrador):**
-NEXUS AI reúne una experiencia de asistente de inteligencia artificial en una interfaz sencilla. Escribe preguntas, desarrolla ideas y conversa desde tu dispositivo Android. El servicio puede conectarse a distintos proveedores de IA según su disponibilidad y configuración.
+TAYVEXA reúne una experiencia de asistente de inteligencia artificial en una interfaz sencilla. Escribe preguntas, desarrolla ideas y conversa desde tu dispositivo Android. El servicio puede conectarse a distintos proveedores de IA según su disponibilidad y configuración.
 
 La aplicación es gratuita. La disponibilidad, velocidad y límites de las respuestas dependen del servicio y de los proveedores conectados. No se garantiza disponibilidad ilimitada.
 
@@ -50,7 +50,7 @@ La aplicación es gratuita. La disponibilidad, velocidad y límites de las respu
 - Verificar que el backend y sus proveedores tienen capacidad y condiciones adecuadas para usuarios públicos.
 
 ## Notas técnicas y de seguridad
-- La app Android es una envoltura Capacitor que carga la web alojada por NEXUS AI. Necesita conexión a Internet y que el backend siga disponible.
+- La app Android es una envoltura Capacitor que carga la web alojada por TAYVEXA. Necesita conexión a Internet y que el backend siga disponible.
 - Las claves de IA deben permanecer en las variables privadas de Render. Nunca incrustarlas en Android.
 - La aplicación gratuita no significa que los proveedores de IA sean ilimitados o sin coste. Mantén límites automáticos y no actives proveedores de pago sin autorización.
 - Antes de producción, probar y revisar las políticas de Google Play aplicables a apps con IA generativa y contenido generado por usuarios.
