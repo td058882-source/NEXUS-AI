@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: nexus-ai
+    name: tayvexa
     runtime: node
     plan: free
     region: frankfurt
