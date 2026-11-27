@@ -1,4 +1,4 @@
-name: NEXUS AI checks
+name: TAYVEXA checks
 on:
   push:
     branches: [main]
