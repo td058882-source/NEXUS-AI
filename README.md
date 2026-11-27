@@ -1,10 +1,10 @@
-# NEXUS AI
+# TAYVEXA
 
 Asistente web en Node.js con integración multi-proveedor, selección automática y fallback cuando un proveedor falla.
 
 ## Proveedores compatibles
 
-NEXUS AI puede conectarse a estos proveedores mediante variables privadas de entorno:
+TAYVEXA puede conectarse a estos proveedores mediante variables privadas de entorno:
 
 - OpenAI
 - Google Gemini
@@ -31,7 +31,7 @@ Los proveedores externos se activan cuando su clave está configurada y están p
 
 ## Motor local y orden de respaldo
 
-NEXUS intenta primero los motores locales activados (Ollama y después LocalAI). Si fallan, continúa con los proveedores externos gratuitos configurados. Los proveedores de pago siguen bloqueados por defecto.
+TAYVEXA intenta primero los motores locales activados (Ollama y después LocalAI). Si fallan, continúa con los proveedores externos gratuitos configurados. Los proveedores de pago siguen bloqueados por defecto.
 
 Variables:
 - `OLLAMA_ENABLED=true`, `OLLAMA_BASE_URL=http://127.0.0.1:11434`, `OLLAMA_MODEL=llama3.2`
