@@ -81,7 +81,7 @@ const compatibleProviders = [
   model:"@cf/zai-org/glm-4.7-flash"
 }]);
 
-// NEXUS runs in free-only mode by default. Paid providers remain blocked
+// TAYVEXA runs in free-only mode by default. Paid providers remain blocked
 // even if their API keys exist in Render. Explicit opt-in is required to unlock them.
 const FREE_PROVIDER_NAMES = new Set([
   "Gemini",
@@ -158,12 +158,12 @@ app.post("/api/media/image",dailyImageLimit,async(req,res)=>{
     if(typeof encoded!=="string"||!encoded.length)throw new Error("El proveedor no devolvió una imagen válida.");
     res.json({image:"data:image/jpeg;base64,"+encoded,provider:"Cloudflare Workers AI · FLUX.1 Schnell"});
   }catch(error){
-    console.error("NEXUS image generation:",error.message);
+    console.error("TAYVEXA image generation:",error.message);
     res.status(502).json({error:"No se pudo generar la imagen. Puede que el proveedor esté ocupado o que se haya agotado la cuota gratuita."});
   }
 });
 
-app.get("/api/health",(_req,res)=>res.json({ok:true,app:"NEXUS AI",version:"1.4.0"}));
+app.get("/api/health",(_req,res)=>res.json({ok:true,app:"TAYVEXA",version:"1.4.0"}));
 app.get("/api/status",(_req,res)=>res.json({
   providers:[
     ...compatibleProviders.map(p=>({name:p.name,configured:Boolean(process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)),enabled:Boolean(process.env[p.key]&&(!p.requiresAccountId||process.env.CLOUDFLARE_ACCOUNT_ID)&&providerIsAllowed(p)),model:p.model})),
@@ -250,4 +250,4 @@ app.post("/api/chat",rateLimit,async(req,res)=>{
   res.status(502).json({error:"Todos los proveedores configurados han fallado.",details:errors});
 });
 const port=process.env.PORT||3000;
-app.listen(port,"0.0.0.0",()=>console.log("NEXUS AI listo en el puerto "+port));
+app.listen(port,"0.0.0.0",()=>console.log("TAYVEXA listo en el puerto "+port));
