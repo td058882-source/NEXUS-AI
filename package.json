@@ -1,8 +1,8 @@
 {
-  "name": "nexus-ai",
+  "name": "tayvexa",
   "version": "1.1.0",
   "private": true,
-  "description": "NEXUS AI multi-provider assistant",
+  "description": "TAYVEXA multi-provider assistant",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
